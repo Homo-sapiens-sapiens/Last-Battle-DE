@@ -20,34 +20,20 @@ class MyView(DesignerView):
     def __init__(self, user: User):
         super().__init__(timeout=30)
         text1 = TextDisplay("LAST BATTLE")
-        text2 = TextDisplay(
-            "This section is contained in a `Container`.\nTo the right, you can see a `Thumbnail`."
-        )
-        thumbnail = Thumbnail(user.display_avatar.url)
-
+        text2 = TextDisplay("Survive by destroing the enemy")
+        thumbnail = Thumbnail(bot.user.display_avatar.url)
         section = Section(text1, text2, accessory=thumbnail)
-        section.add_text("-# Small text")
-
-        container = Container(
-            section,
-            TextDisplay("Another `TextDisplay` separate from the `Section`."),
-            color=Color.blue(),
-        )
-        container.add_separator(divider=True, spacing=SeparatorSpacingSize.large)
-        container.add_item(Separator())
-        container.add_text("Above is two `Separator`s followed by a `File`.")
-
-        gallery = MediaGallery()
-        gallery.add_item(user.default_avatar.url)
-        gallery.add_item(user.avatar.url)
-
+        section.add_text("-# Good luck")
+        container = Container(section, color=Color.from_rgb(180, 180, 180))
+        async def delete_callback(interaction: Interaction):
+            await interaction.response.defer(invisible=True)
+            await interaction.channel.delete()
+        delete_button = Button(label="Delete Thread", style=ButtonStyle.red, id=0)
+        delete_button.callback = delete_callback
+        row = ActionRow()
+        row.add_item(delete_button)
+        container.add_item(row)
         self.add_item(container)
-        self.add_item(gallery)
-        self.add_item(
-            TextDisplay("Above is a `MediaGallery` containing two `MediaGalleryItem`s.")
-        )
-        row = MyRow()
-        self.add_item(row)
 
 class User:
     def __init__(self):
@@ -55,7 +41,7 @@ class User:
         self.free = None
         self.thread = None
         self.name = None
-        self.embed = None 
+        self.view = None 
     @classmethod
     async def create(cls, ctx: discord.ApplicationContext):
         global users
@@ -66,9 +52,8 @@ class User:
                                                       type=discord.ChannelType.private_thread, invitable=False)
         await self.thread.add_user(ctx.author)
         await self.thread.send(f"The new game thread for {self.name} was created")
-        f = await ctx.author.display_avatar.read()
-        file = File(BytesIO(f), filename="all_green.png")
-        await self.thread.send(view=MyView(ctx.author), files=[file])
+        self.view = MyView(ctx.author)
+        await self.thread.send(self.view)
         await ctx.send(f"{self.thread.mention} thread for {self.name} created")
         return self
 
