@@ -10,35 +10,36 @@ from discord.ui import (ActionRow, Button, Container, DesignerView,
 
 users = {}
 
-class MyRow(ActionRow):
-    @button(label="Delete Thread", style=ButtonStyle.red, id=200)
-    async def delete_button(self, button: Button, interaction: Interaction):
-        await interaction.response.defer(invisible=True)
-        await interaction.channel.delete()
-
 class MyView(DesignerView):
-    def __init__(self, user: User):
+    def __init__(self, user: MyUser):
+        self.user = user
+        self.container = None
         super().__init__(timeout=30)
         text1 = TextDisplay("LAST BATTLE")
         text2 = TextDisplay("Survive by destroing the enemy")
         thumbnail = Thumbnail(bot.user.display_avatar.url)
         section = Section(text1, text2, accessory=thumbnail)
         section.add_text("-# Good luck")
-        container = Container(section, color=Color.from_rgb(180, 180, 180))
-        async def delete_callback(interaction: Interaction):
-            await interaction.response.defer(invisible=True)
-            await interaction.channel.delete()
+        self.container = Container(section, color=Color.from_rgb(180, 180, 180))
+        async def delete_callback(interaction: Interaction): await self.user.thread.delete()
+        async def play_callback(interaction: Interaction):
+            self.container.add_item(TextDisplay("there's no game silly"))
+            await interaction.response.edit_message(view=self)
         delete_button = Button(label="Delete Thread", style=ButtonStyle.red, id=0)
         delete_button.callback = delete_callback
+        play_button = Button(label="Start the game", style=ButtonStyle.green, id=0)
+        play_button.callback = play_callback
         row = ActionRow()
         row.add_item(delete_button)
-        container.add_item(row)
-        self.add_item(container)
+        row.add_item(play_button)
+        self.container.add_item(row)
+        self.add_item(self.container)
 
-class User:
+class MyUser:
     def __init__(self):
-        self.id = None
-        self.free = None
+        self.d_id = None
+        self.p_id = None
+        self.g_id = None
         self.thread = None
         self.name = None
         self.view = None 
@@ -47,13 +48,13 @@ class User:
         global users
         self = cls()
         self.name = ctx.author.name
-        self.id = ctx.author.id
+        self.d_id = ctx.author.id
         self.thread = await ctx.channel.create_thread(name=f"{ctx.author.name}'s game",
                                                       type=discord.ChannelType.private_thread, invitable=False)
         await self.thread.add_user(ctx.author)
         await self.thread.send(f"The new game thread for {self.name} was created")
-        self.view = MyView(ctx.author)
-        await self.thread.send(self.view)
+        self.view = MyView(self)
+        await self.thread.send(view=self.view)
         await ctx.send(f"{self.thread.mention} thread for {self.name} created")
         return self
 
@@ -68,7 +69,7 @@ async def on_ready():
 async def new_game(ctx: discord.ApplicationContext):
     await ctx.respond("creating the thread...",ephemeral=True)
     global users
-    user=await User.create(ctx)
+    user=await MyUser.create(ctx)
     users[str(user.id)]=user
 
 bot.run(os.getenv('TOKEN'))
