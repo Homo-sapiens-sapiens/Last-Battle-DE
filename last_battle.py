@@ -39,9 +39,7 @@ class MyView(DesignerView):
 
 class MyUser:
     def __init__(self):
-        self.d_id = None
-        self.p_id = None
-        self.g_id = None
+        self.id = None
         self.thread = None
         self.name = None
         self.view = None 
@@ -70,9 +68,11 @@ async def on_ready():
 @bot.slash_command(name="start", description="start the game (not ready yet)")
 async def new_game(ctx: discord.ApplicationContext):
     await ctx.respond("creating the thread...",ephemeral=True)
-    global users
+    global users, fusers
     user=await MyUser.create(ctx)
-    free[str(user.id)]=user
+    fusers[str(user.id)]=user
     users[str(user.id)]=user
+    print(len(fusers))
+    print(len(users))
 
 bot.run(os.getenv('TOKEN'))
