@@ -9,9 +9,11 @@ from discord.ui import (ActionRow, Button, Container, DesignerView,
     MediaGallery, Section, Select, Separator, TextDisplay, Thumbnail, button)
 
 users = {}
+fusers = {}
 
 class MyView(DesignerView):
     def __init__(self, user: MyUser):
+        global users, fusers
         self.user = user
         self.container = None
         super().__init__(timeout=30)
@@ -23,7 +25,7 @@ class MyView(DesignerView):
         self.container = Container(section, color=Color.from_rgb(180, 180, 180))
         async def delete_callback(interaction: Interaction): await self.user.thread.delete()
         async def play_callback(interaction: Interaction):
-            self.container.add_item(TextDisplay("there's no game silly"))
+            self.container.add_item(TextDisplay(f"There's {len(users)} players and {len(fusers)} are avaiable"))
             await interaction.response.edit_message(view=self)
         delete_button = Button(label="Delete Thread", style=ButtonStyle.red, id=0)
         delete_button.callback = delete_callback
@@ -70,6 +72,7 @@ async def new_game(ctx: discord.ApplicationContext):
     await ctx.respond("creating the thread...",ephemeral=True)
     global users
     user=await MyUser.create(ctx)
+    free[str(user.id)]=user
     users[str(user.id)]=user
 
 bot.run(os.getenv('TOKEN'))
