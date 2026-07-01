@@ -11,6 +11,22 @@ from discord.ui import (ActionRow, Button, Container, DesignerView,
 users = {}
 fusers = {}
 
+class MyGame:
+    def __init__(self):
+        self.player1 = None
+        self.player2 = None
+        self.view1 = None
+        self.view2 = None
+    @classmethod
+    async def create(self, user1, user2, pot1, pot2):
+        global fusers
+        self.player1 = user1
+        self.player2 = user2
+        self.view1 = pot1
+        self.view2 = pot2
+        fusers.pop(player1.id)
+        fusers.pop(player2.id)
+
 class MyView(DesignerView):
     def __init__(self, user: MyUser):
         global users, fusers
@@ -26,6 +42,7 @@ class MyView(DesignerView):
         async def delete_callback(interaction: Interaction): await self.user.thread.delete()
         async def play_callback(interaction: Interaction):
             self.container.add_item(TextDisplay(f"There's {len(users)} players and {len(fusers)} are avaiable"))
+            gamestart()
             await interaction.response.edit_message(view=self)
         delete_button = Button(label="Delete Thread", style=ButtonStyle.red, id=0)
         delete_button.callback = delete_callback
@@ -48,9 +65,9 @@ class MyUser:
         global users
         self = cls()
         self.name = ctx.author.name
-        self.d_id = ctx.author.id
+        self.id = ctx.author.id
         self.thread = await ctx.channel.create_thread(name=f"{ctx.author.name}'s game",
-                                                      type=discord.ChannelType.private_thread, invitable=False)
+            type=discord.ChannelType.private_thread, invitable=False)
         await self.thread.add_user(ctx.author)
         await self.thread.send(f"The new game thread for {self.name} was created")
         self.view = MyView(self)
@@ -74,5 +91,9 @@ async def new_game(ctx: discord.ApplicationContext):
     users[str(user.id)]=user
     print(len(fusers))
     print(len(users))
+
+async def gamestart():
+    print("keep going, everything is alright")
+    
 
 bot.run(os.getenv('TOKEN'))
