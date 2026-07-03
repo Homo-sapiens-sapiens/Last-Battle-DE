@@ -13,16 +13,16 @@ fusers = {}
 class MyGame:
     def __init__(self, player1, player2):
         global fusers
-        self.player1 = player1
-        self.player2 = player2
-        self.view1 = player1.view
-        self.view2 = player2.view
+        self.user1 = player1
+        self.user2 = player2
+        self.view1 = self.user1.view
+        self.view2 = self.user2.view
         self.view1.game = self
         self.view2.game = self
-        self.player1.game = self
-        self.player2.game = self
-        fusers.pop(player1.id)
-        fusers.pop(player2.id)
+        self.user1.game = self
+        self.user2.game = self
+        fusers.pop(self.user1.id)
+        fusers.pop(self.user2.id)
 
 class MyView(DesignerView):
     def __init__(self, user: MyUser):
@@ -37,7 +37,11 @@ class MyView(DesignerView):
         section = Section(text1, text2, accessory=thumbnail)
         section.add_text("-# Good luck")
         self.container = Container(section, color=Color.from_rgb(180, 180, 180))
-        async def delete_callback(interaction: Interaction): await self.user.thread.delete()
+        async def delete_callback(interaction: Interaction):
+            if self.user.id in fusers: fusers.pop(self.user.id)
+            self.stop()
+            await interaction.response.defer()
+            await self.user.thread.delete()
         async def play_callback(interaction: Interaction):
             if self.user.id in fusers:
                 await interaction.response.send_message("You already are waiting for opponent",ephemeral=True)
@@ -49,7 +53,7 @@ class MyView(DesignerView):
                 return
             else:
                 opponent = next(iter(fusers.values()))
-                fusers.pop(str(opponent.id))
+                fusers.pop(opponent.id)
                 game = MyGame(opponent, self.user)
                 self.container.add_item(TextDisplay(f"The game created: {opponent.name} vs {self.user.name}"))
                 await interaction.response.edit_message(view=self)
