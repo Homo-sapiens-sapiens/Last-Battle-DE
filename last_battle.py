@@ -70,12 +70,14 @@ class MyView(DesignerView):
         row.add_item(play_button)
         self.menu.add_item(row)
         self.add_item(self.menu)
-    
     async def show_game(self):
         self.clear_items()
         self.table = Container(color=Color.from_rgb(180, 180, 180))
-        self.table.add_item(TextDisplay("# LAST BATTLE"))
-        self.table.add_item(TextDisplay("game interface"))
+        thumbnail1 = Thumbnail(bot.user.display_avatar.url)
+        text3 = TextDisplay("# LAST BATTLE")
+        text4 = TextDisplay("Game interface")
+        section1 = Section(text3, text4, accessory=thumbnail1)
+        self.table.add_item(section1)
         self.add_item(self.table)
         await self.user.message.edit(view=self)
 
