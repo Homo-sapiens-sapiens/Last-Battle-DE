@@ -16,6 +16,8 @@ class MyGame:
         self.user2 = None
         self.view1 = None
         self.view2 = None
+    def __del__(self):
+        print("MyGame deleted")
     async def create(self, player1, player2):
         self.user1 = player1
         self.user2 = player2
@@ -29,6 +31,20 @@ class MyGame:
         fusers.pop(self.user2.id, None)
         await self.view1.show_game()
         await self.view2.show_game()
+    async def user_lost(self, user):
+        if self.view1 == user:
+            loser_v = self.view1
+            winner_v = self.view2
+        else:
+            loser_v = self.view2
+            winner_v = self.view1
+        await winner_v.victory()
+        await loser_v.defeat()
+        self.view1.game = None
+        self.view2.game = None
+        self.user1.game = None
+        self.user2.game = None
+            
 
 class MyView(DesignerView):
     def __init__(self, user):
@@ -37,6 +53,8 @@ class MyView(DesignerView):
         self.menu = None
         self.table = None
         super().__init__(timeout=30)
+    async def show_menu(self):
+        self.clear_items()
         text1 = TextDisplay("# LAST BATTLE")
         text2 = TextDisplay("Main menu")
         thumbnail = Thumbnail(bot.user.display_avatar.url)
@@ -61,9 +79,9 @@ class MyView(DesignerView):
             game = MyGame(opponent, self.user)
             await interaction.response.defer()
             await game.create(opponent, self.user)
-        delete_button = Button(label="Delete Thread", style=ButtonStyle.red, id=0)
+        delete_button = Button(label="Delete Thread", style=ButtonStyle.red)
         delete_button.callback = delete_callback
-        play_button = Button(label="Start the game", style=ButtonStyle.green, id=0)
+        play_button = Button(label="Start the game", style=ButtonStyle.green)
         play_button.callback = play_callback
         row = ActionRow()
         row.add_item(delete_button)
@@ -79,6 +97,22 @@ class MyView(DesignerView):
         section1 = Section(text3, text4, accessory=thumbnail1)
         self.table.add_item(section1)
         self.add_item(self.table)
+        row1 = ActionRow()
+        sur_button = Button(label="Surender", style=ButtonStyle.red)
+        async def surrender(interaction: Interaction):
+            await self.game.user_lost(self)
+        await self.user.message.edit(view=self)
+        sur_button.callback = surrender
+        row1.add_item(sur_button)
+        self.table.add_item(row1)
+        await self.user.message.edit(view=self)
+    async def defeat(self):
+        await self.show_menu()
+        self.menu.add_item(TextDisplay("You lost. Better luck next time!"))
+        await self.user.message.edit(view=self)
+    async def victory(self):
+        await self.show_menu()
+        self.menu.add_item(TextDisplay("You won! Congrats with survival!"))
         await self.user.message.edit(view=self)
 
 class MyUser:
@@ -100,6 +134,7 @@ class MyUser:
         await self.thread.add_user(ctx.author)
         await self.thread.send(f"The new game thread for {self.name} was created")
         self.view = MyView(self)
+        await self.view.show_menu()
         self.message = await self.thread.send(view=self.view)
         await ctx.send(f"{self.thread.mention} thread for {self.name} created")
         return self
@@ -117,5 +152,4 @@ async def new_game(ctx: discord.ApplicationContext):
     global fusers
     user=await MyUser.create(ctx)
     
-
 bot.run(os.getenv('TOKEN'))
