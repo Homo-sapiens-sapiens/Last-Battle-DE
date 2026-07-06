@@ -100,6 +100,7 @@ class MyView(DesignerView):
         row1 = ActionRow()
         sur_button = Button(label="Surender", style=ButtonStyle.red)
         async def surrender(interaction: Interaction):
+            await interaction.response.defer()
             await self.game.user_lost(self)
         await self.user.message.edit(view=self)
         sur_button.callback = surrender
