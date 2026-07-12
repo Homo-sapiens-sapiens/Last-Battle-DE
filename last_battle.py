@@ -9,7 +9,7 @@ from discord.ui import (ActionRow, Button, Container, DesignerView,
     MediaGallery, Section, Select, Separator, TextDisplay, Thumbnail, button)
 
 fusers = {}
-emoji=["<all_grey:1524562050477461635>", "<all_green:1497928981188575232>"]
+emoji=["<:all_grey:1524562050477461635>", "<:all_green:1497928981188575232>"]
 
 class MyGame:
     def __init__(self):
@@ -58,6 +58,7 @@ class MyView(DesignerView):
         self.game = None
         self.menu = None
         self.table = None
+        self.screen = None
         super().__init__(timeout=30)
     async def create_menu(self):
         text1 = TextDisplay("# LAST BATTLE")
@@ -75,15 +76,18 @@ class MyView(DesignerView):
             if self.user.id in fusers:
                 await interaction.response.send_message("You already are waiting for opponent",ephemeral=True)
                 return
-            if len(fusers) == 0:
+            elif len(fusers) == 0:
                 fusers[self.user.id] = self.user
                 self.menu.add_item(TextDisplay("Waiting for the opponent"))
                 await interaction.response.edit_message(view=self)
                 return
-            opponent = next(iter(fusers.values()))
-            game = MyGame(opponent, self.user)
-            await interaction.response.defer()
-            await game.create(opponent, self.user)
+            else:
+                opponent = next(iter(fusers.values()))
+                game = MyGame()
+                await interaction.response.defer()
+                await game.create(opponent, self.user)
+                self.user.number = 2
+                opponent.number = 1
         delete_button = Button(label="Delete Thread", style=ButtonStyle.red)
         delete_button.callback = delete_callback
         play_button = Button(label="Start the game", style=ButtonStyle.green)
@@ -104,12 +108,8 @@ class MyView(DesignerView):
         section1 = Section(text3, text4, accessory=thumbnail1)
         self.table.add_item(section1)
         self.add_item(self.table)
-        section2 = Section()
-        for i in range(8):
-            a=f""
-            for j in range(8):
-                a+=emoji[self.ground]
-            section2.add_item(TextDisplay(a))
+        self.screen = TextDisplay(f"Wait a bit...")
+        self.table.add_item(self.screen)
         row1 = ActionRow()
         sur_button = Button(label="Surender", style=ButtonStyle.red)
         async def surrender(interaction: Interaction):
@@ -118,13 +118,17 @@ class MyView(DesignerView):
         sur_button.callback = surrender
         row1.add_item(sur_button)
         self.table.add_item(row1)
-    async def radar(self, mode):
-        if number = 1:
-            
+    async def ground(self):
+        if self.user.number == 1:
+            ground = self.game.ground1
+        else:
+            ground = self.game.ground2
+        self.screen.content = f"\n".join("".join(emoji[cell] for cell in row)for row in ground)
     async def show_game(self):
         self.clear_items()
         self.add_item(self.table)
-        await self.message.edit(view=self)
+        await self.ground()
+        await self.message.edit(view=self) 
     async def defeat(self):
         await self.show_menu()
         self.menu.add_item(TextDisplay("You lost. Better luck next time!"))
