@@ -1,5 +1,6 @@
 from io import BytesIO
-import os 
+import os
+import random
 from dotenv import load_dotenv
 load_dotenv()
 import discord
@@ -9,7 +10,8 @@ from discord.ui import (ActionRow, Button, Container, DesignerView,
     MediaGallery, Section, Select, Separator, TextDisplay, Thumbnail, button)
 
 fusers = {}
-emoji=["<:all_grey:1524562050477461635>", "<:all_green:1497928981188575232>"]
+r_emoji=["<:all_grey:1525893303898214400>", "<:all_green:1497928981188575232>"]
+b_emoji=["<:all_grey:1525893303898214400>", "<:up_fac:1525896582036324372>", "<:up_hom:1525985697612304537>"]
 
 class MyGame:
     def __init__(self):
@@ -59,7 +61,7 @@ class MyView(DesignerView):
         self.menu = None
         self.table = None
         self.screen = None
-        super().__init__(timeout=30)
+        super().__init__(timeout=None)
     async def create_menu(self):
         text1 = TextDisplay("# LAST BATTLE")
         text2 = TextDisplay("Main menu")
@@ -110,20 +112,31 @@ class MyView(DesignerView):
         self.add_item(self.table)
         self.screen = TextDisplay(f"Wait a bit...")
         self.table.add_item(self.screen)
-        row1 = ActionRow()
-        sur_button = Button(label="Surender", style=ButtonStyle.red)
+        sur_button = Button(label="Surrender", style=ButtonStyle.red)
+        b_choice = Select(placeholder = "Building", min_values = 1, max_values = 1,
+            options = [
+                discord.SelectOption(
+                    label="Overground factory",
+                    emoji=discord.PartialEmoji(name="up_fac",id=1525896582036324372)),
+                discord.SelectOption(
+                    label="Overground city",
+                    emoji=discord.PartialEmoji(name="up_hom",id=1525985697612304537))])
+        async def b_callback(self, b_choise, interaction):
+            await interaction.response.defer()
         async def surrender(interaction: Interaction):
             await interaction.response.defer()
             await self.game.user_lost(self)
+        row1 = ActionRow(b_choice)
         sur_button.callback = surrender
-        row1.add_item(sur_button)
+        row2 = ActionRow(sur_button)
         self.table.add_item(row1)
+        self.table.add_item(row2)
     async def ground(self):
         if self.user.number == 1:
             ground = self.game.ground1
         else:
             ground = self.game.ground2
-        self.screen.content = f"\n".join("".join(emoji[cell] for cell in row)for row in ground)
+        self.screen.content = f"\n".join("".join(b_emoji[cell] for cell in row)for row in ground)
     async def show_game(self):
         self.clear_items()
         self.add_item(self.table)
