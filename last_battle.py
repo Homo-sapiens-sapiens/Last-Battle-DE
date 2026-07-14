@@ -113,24 +113,44 @@ class MyView(DesignerView):
         self.screen = TextDisplay(f"Wait a bit...")
         self.table.add_item(self.screen)
         sur_button = Button(label="Surrender", style=ButtonStyle.red)
+        async def surrender(interaction: Interaction):
+            await interaction.response.defer()
+            await self.game.user_lost(self)
         b_choice = Select(placeholder = "Building", min_values = 1, max_values = 1,
             options = [
                 discord.SelectOption(
                     label="Overground factory",
+                    value="1",
                     emoji=discord.PartialEmoji(name="up_fac",id=1525896582036324372)),
                 discord.SelectOption(
                     label="Overground city",
+                    value="2",
                     emoji=discord.PartialEmoji(name="up_hom",id=1525985697612304537))])
-        async def b_callback(self, b_choise, interaction):
+        async def b_set(interaction: Interaction):
             await interaction.response.defer()
-        async def surrender(interaction: Interaction):
+            pass
+        x_input = Select(placeholder = "Horizontal", min_values = 1, max_values = 1,
+            options = [discord.SelectOption(label=str(i), value=str(i))for i in range(1, 9)])
+        async def x_set(interaction: Interaction):
             await interaction.response.defer()
-            await self.game.user_lost(self)
-        row1 = ActionRow(b_choice)
+            pass
+        y_input = Select(placeholder = "Vertival", min_values = 1, max_values = 1,
+            options = [discord.SelectOption(label=str(i), value=str(i))for i in range(1, 9)])
+        async def y_set(interaction: Interaction):
+            await interaction.response.defer()
+            pass
         sur_button.callback = surrender
-        row2 = ActionRow(sur_button)
+        b_choice.callback = b_set
+        x_input.callback = x_set
+        y_input.callback = y_set
+        row1=ActionRow(b_choice)
+        row2=ActionRow(x_input)
+        row3=ActionRow(y_input)
+        row4=ActionRow(sur_button)
         self.table.add_item(row1)
         self.table.add_item(row2)
+        self.table.add_item(row3)
+        self.table.add_item(row4)
     async def ground(self):
         if self.user.number == 1:
             ground = self.game.ground1
