@@ -10,9 +10,11 @@ from discord.ui import (ActionRow, Button, Container, DesignerView,
     MediaGallery, Section, Select, Separator, TextDisplay, Thumbnail, button)
 
 fusers = {}
-r_emoji=["<:all_grey:1525893303898214400>", "<:all_green:1497928981188575232>"]
-b_emoji=["<:all_grey:1525893303898214400>", "<:up_fac:1525896582036324372>", "<:up_hom:1525985697612304537>"]
-
+r_emoji=["<:grey:1525893303898214400>", "<:gren:1497928981188575232>"]
+b_emoji=["<:grey:1525893303898214400>", "<:gfac:1525896582036324372>", "<:ghom:1525985697612304537>"]
+n_emoji=["<:blac:1527003711849631855>","<:one:1527003069726855270>", "<:two:1527001046713499840>",
+         "<:thre:1527003085443043418>", "<:four:1527003120905883648>", "<:five:1527003139335651469>",
+         "<:six:1527003153260876039>", "<:sevn:1527003167030509669>", "<:eigt:1527003185309552760>"]
 class MyGame:
     def __init__(self):
         self.user1 = None
@@ -53,6 +55,13 @@ class MyGame:
         self.view2.game = None
         self.user1.game = None
         self.user2.game = None
+    async def build(self, bder):
+        if bder == self.view1:
+            field = self.ground1
+        else:
+            field = self.ground2
+        ask = bder.b_set
+        field[ask[1]-1][ask[2]-1]=ask[0]
             
 class MyView(DesignerView):
     def __init__(self, user):
@@ -61,6 +70,7 @@ class MyView(DesignerView):
         self.menu = None
         self.table = None
         self.screen = None
+        self.b_set = [0, 0, 0]
         super().__init__(timeout=None)
     async def create_menu(self):
         text1 = TextDisplay("# LAST BATTLE")
@@ -112,11 +122,8 @@ class MyView(DesignerView):
         self.add_item(self.table)
         self.screen = TextDisplay(f"Wait a bit...")
         self.table.add_item(self.screen)
-        sur_button = Button(label="Surrender", style=ButtonStyle.red)
-        async def surrender(interaction: Interaction):
-            await interaction.response.defer()
-            await self.game.user_lost(self)
-        b_choice = Select(placeholder = "Building", min_values = 1, max_values = 1,
+
+        b_input = Select(placeholder = "Building", min_values = 1, max_values = 1,
             options = [
                 discord.SelectOption(
                     label="Overground factory",
@@ -126,27 +133,48 @@ class MyView(DesignerView):
                     label="Overground city",
                     value="2",
                     emoji=discord.PartialEmoji(name="up_hom",id=1525985697612304537))])
-        async def b_set(interaction: Interaction):
-            await interaction.response.defer()
-            pass
+        y_input = Select(placeholder = "Vertical", min_values = 1, max_values = 1,
+            options = [discord.SelectOption(label=str(i), value=str(i))for i in range(1, 9)])
         x_input = Select(placeholder = "Horizontal", min_values = 1, max_values = 1,
             options = [discord.SelectOption(label=str(i), value=str(i))for i in range(1, 9)])
-        async def x_set(interaction: Interaction):
+        bul_button = Button(label="Proceed Building", style=ButtonStyle.grey)
+        sur_button = Button(label="Surrender", style=ButtonStyle.red)
+        
+        async def b_set(interaction: Interaction):
             await interaction.response.defer()
-            pass
-        y_input = Select(placeholder = "Vertival", min_values = 1, max_values = 1,
-            options = [discord.SelectOption(label=str(i), value=str(i))for i in range(1, 9)])
+            self.b_set[0]=int(b_input.values[0])
         async def y_set(interaction: Interaction):
             await interaction.response.defer()
-            pass
-        sur_button.callback = surrender
-        b_choice.callback = b_set
+            self.b_set[1]=int(y_input.values[0])
+        async def x_set(interaction: Interaction):
+            await interaction.response.defer()
+            self.b_set[2]=int(x_input.values[0])
+        async def build_ask(interaction: Interaction):
+            if 0 not in self.b_set:
+                await self.game.build(self)
+                await self.ground()
+                b_input.value=[]
+                x_input.value=[]
+                y_input.value=[]
+                self.b_set=[0, 0, 0]
+                await interaction.response.edit_message(view=self)
+            else:
+                await interaction.response.send_message("You did not chosed the building or the coordinates",ephemeral=True)
+        async def surrender(interaction: Interaction):
+            await interaction.response.defer()
+            await self.game.user_lost(self)
+            
+        b_input.callback = b_set
         x_input.callback = x_set
         y_input.callback = y_set
-        row1=ActionRow(b_choice)
+        bul_button.callback = build_ask
+        sur_button.callback = surrender
+        
+        row1=ActionRow(b_input)
         row2=ActionRow(x_input)
         row3=ActionRow(y_input)
-        row4=ActionRow(sur_button)
+        row4=ActionRow(bul_button, sur_button)
+        
         self.table.add_item(row1)
         self.table.add_item(row2)
         self.table.add_item(row3)
@@ -156,7 +184,11 @@ class MyView(DesignerView):
             ground = self.game.ground1
         else:
             ground = self.game.ground2
-        self.screen.content = f"\n".join("".join(b_emoji[cell] for cell in row)for row in ground)
+        self.screen.content=f"".join(n_emoji[i] for i in range(9))
+        for i in range(8):
+            self.screen.content+="\n"+n_emoji[i+1]
+            for j in range(8):self.screen.content+=b_emoji[ground[i][j]]
+        print(len(self.screen.content))
     async def show_game(self):
         self.clear_items()
         self.add_item(self.table)
