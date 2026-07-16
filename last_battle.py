@@ -15,6 +15,7 @@ b_emoji=["<:grey:1525893303898214400>", "<:gfac:1525896582036324372>", "<:ghom:1
 n_emoji=["<:blac:1527003711849631855>","<:one:1527003069726855270>", "<:two:1527001046713499840>",
          "<:thre:1527003085443043418>", "<:four:1527003120905883648>", "<:five:1527003139335651469>",
          "<:six:1527003153260876039>", "<:sevn:1527003167030509669>", "<:eigt:1527003185309552760>"]
+
 class MyGame:
     def __init__(self):
         self.user1 = None
@@ -188,6 +189,11 @@ class MyView(DesignerView):
         for i in range(8):
             self.screen.content+="\n"+n_emoji[i+1]
             for j in range(8):self.screen.content+=b_emoji[ground[i][j]]
+            
+        self.screen.content+="\n"
+        for i in range(len(b_emoji)-1):self.screen.content+="  2  "
+        self.screen.content+="\n"
+        for i in range(len(b_emoji)-1):self.screen.content+=b_emoji[i+1]
         print(len(self.screen.content))
     async def show_game(self):
         self.clear_items()
