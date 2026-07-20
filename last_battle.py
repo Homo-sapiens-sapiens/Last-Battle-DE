@@ -12,57 +12,46 @@ from discord.ui import (ActionRow, Button, Container, DesignerView,
 fusers = {}
 r_emoji=["<:grey:1525893303898214400>", "<:gren:1497928981188575232>"]
 b_emoji=["<:grey:1525893303898214400>", "<:gfac:1525896582036324372>", "<:ghom:1525985697612304537>"]
-n_emoji=["<:blac:1527003711849631855>","<:one:1527003069726855270>", "<:two:1527001046713499840>",
+n_emoji=["<:zero:1527297606986764360>","<:one:1527003069726855270>", "<:two:1527001046713499840>",
          "<:thre:1527003085443043418>", "<:four:1527003120905883648>", "<:five:1527003139335651469>",
          "<:six:1527003153260876039>", "<:sevn:1527003167030509669>", "<:eigt:1527003185309552760>"]
+blac = "<:blac:1527003711849631855>"
 
 class MyGame:
     def __init__(self):
-        self.user1 = None
-        self.user2 = None
-        self.view1 = None
-        self.view2 = None
-        self.ground1 = [[0] * 8 for i in range(8)]
-        self.ground2 = [[0] * 8 for i in range(8)]
-        self.rad1 = [[0] * 8 for i in range(8)]
-        self.rad2 = [[0] * 8 for i in range(8)]
+        self.users = [None, None]
+        self.views = [None, None]
+        self.grounds = [[[0] * 8 for i in range(8)], [[0] * 8 for i in range(8)]]
+        self.rads = [[[0] * 8 for i in range(8)], [[0] * 8 for i in range(8)]]
     def __del__(self):
         print("MyGame deleted")
     async def create(self, player1, player2):
-        self.user1 = player1
-        self.user2 = player2 #!!!
-        self.view1 = self.user1.view
-        self.view2 = self.user2.view
-        self.view1.game = self
-        self.view2.game = self
-        self.user1.game = self
-        self.user2.game = self
-        fusers.pop(self.user1.id, None)
-        fusers.pop(self.user2.id, None)
-        self.user1.number = 1
-        self.user2.number = 2
-        await self.view1.show_game()
-        await self.view2.show_game()
+        self.users= [player1, player2]
+        self.views = [self.users[0].view, self.users[1].view]
+        self.views[0].game = self
+        self.views[1].game = self
+        self.users[0].game = self
+        self.users[1].game = self
+    
+        fusers.pop(self.users[0].id, None)
+        fusers.pop(self.users[1].id, None)
+        self.users[0].number = 0
+        self.users[1].number = 1
+        await self.views[0].show_game()
+        await self.views[1].show_game()
+        
     async def user_lost(self, user):
-        if self.view1 == user:
-            loser_v = self.view1
-            winner_v = self.view2
-        else:
-            loser_v = self.view2
-            winner_v = self.view1
+        loser_v == user
+        winner_v == views[(views.index(user)+1)%2]
         await winner_v.victory()
         await loser_v.defeat()
-        self.view1.game = None
-        self.view2.game = None
-        self.user1.game = None
-        self.user2.game = None
+        self.views[0].game = None
+        self.views[1].game = None
+        self.users[0].game = None
+        self.users[1].game = None
     async def build(self, bder):
-        if bder == self.view1:
-            field = self.ground1
-        else:
-            field = self.ground2
         ask = bder.b_set
-        field[ask[1]-1][ask[2]-1]=ask[0]
+        self.grounds[bder.user.number][ask[1]-1][ask[2]-1]=ask[0]
             
 class MyView(DesignerView):
     def __init__(self, user):
@@ -99,8 +88,6 @@ class MyView(DesignerView):
                 game = MyGame()
                 await interaction.response.defer()
                 await game.create(opponent, self.user)
-                self.user.number = 2
-                opponent.number = 1
         delete_button = Button(label="Delete Thread", style=ButtonStyle.red)
         delete_button.callback = delete_callback
         play_button = Button(label="Start the game", style=ButtonStyle.green)
@@ -181,17 +168,16 @@ class MyView(DesignerView):
         self.table.add_item(row3)
         self.table.add_item(row4)
     async def ground(self):
-        if self.user.number == 1:
-            ground = self.game.ground1
-        else:
-            ground = self.game.ground2
-        self.screen.content=f"".join(n_emoji[i] for i in range(9))
+        print(self.user.number)
+        ground = self.game.grounds[self.user.number]
+        self.screen.content=f""+blac
+        for i in range(1,9): self.screen.content += n_emoji[i]
         for i in range(8):
             self.screen.content+="\n"+n_emoji[i+1]
             for j in range(8):self.screen.content+=b_emoji[ground[i][j]]
-            
         self.screen.content+="\n"
-        for i in range(len(b_emoji)-1):self.screen.content+="  2  "
+        self.screen.content+="\n"
+        for i in range(len(b_emoji)-1):self.screen.content+=n_emoji[2]
         self.screen.content+="\n"
         for i in range(len(b_emoji)-1):self.screen.content+=b_emoji[i+1]
         print(len(self.screen.content))
