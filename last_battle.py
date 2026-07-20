@@ -23,8 +23,11 @@ class MyGame:
         self.views = [None, None]
         self.grounds = [[[0] * 8 for i in range(8)], [[0] * 8 for i in range(8)]]
         self.rads = [[[0] * 8 for i in range(8)], [[0] * 8 for i in range(8)]]
+        self.counts = [[2, 2], [2, 2]]
+        self.reses = [[20, 20], [20, 20]]
     def __del__(self):
         print("MyGame deleted")
+
     async def create(self, player1, player2):
         self.users= [player1, player2]
         self.views = [self.users[0].view, self.users[1].view]
@@ -32,17 +35,26 @@ class MyGame:
         self.views[1].game = self
         self.users[0].game = self
         self.users[1].game = self
-    
+        
         fusers.pop(self.users[0].id, None)
         fusers.pop(self.users[1].id, None)
         self.users[0].number = 0
         self.users[1].number = 1
+        for i in range(2):
+            for j in range(len(self.counts[0])):
+                k=0
+                while k != self.counts[0][0]:
+                    r1 = random.randint(0, 7)
+                    r2 = random.randint(0, 7)
+                    if not self.grounds[i][r1][r2]:
+                        self.grounds[i][r1][r2] = j+1
+                        k+=1
         await self.views[0].show_game()
         await self.views[1].show_game()
         
     async def user_lost(self, user):
-        loser_v == user
-        winner_v == views[(views.index(user)+1)%2]
+        loser_v = user
+        winner_v = views[(views.index(user)+1)%2]
         await winner_v.victory()
         await loser_v.defeat()
         self.views[0].game = None
@@ -168,8 +180,8 @@ class MyView(DesignerView):
         self.table.add_item(row3)
         self.table.add_item(row4)
     async def ground(self):
-        print(self.user.number)
-        ground = self.game.grounds[self.user.number]
+        num = self.user.number
+        ground = self.game.grounds[num]
         self.screen.content=f""+blac
         for i in range(1,9): self.screen.content += n_emoji[i]
         for i in range(8):
@@ -177,7 +189,9 @@ class MyView(DesignerView):
             for j in range(8):self.screen.content+=b_emoji[ground[i][j]]
         self.screen.content+="\n"
         self.screen.content+="\n"
-        for i in range(len(b_emoji)-1):self.screen.content+=n_emoji[2]
+        
+        res = self.game.reses[num]
+        for i in range(len(b_emoji)-1):self.screen.content+=str(res[i])+" "
         self.screen.content+="\n"
         for i in range(len(b_emoji)-1):self.screen.content+=b_emoji[i+1]
         print(len(self.screen.content))
