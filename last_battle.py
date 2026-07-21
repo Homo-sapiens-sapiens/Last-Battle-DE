@@ -10,11 +10,12 @@ from discord.ui import (ActionRow, Button, Container, DesignerView,
     MediaGallery, Section, Select, Separator, TextDisplay, Thumbnail, button)
 
 fusers = {}
-r_emoji=["<:grey:1525893303898214400>", "<:gren:1497928981188575232>"]
-b_emoji=["<:grey:1525893303898214400>", "<:gfac:1525896582036324372>", "<:ghom:1525985697612304537>"]
-n_emoji=["<:zero:1527297606986764360>","<:one:1527003069726855270>", "<:two:1527001046713499840>",
+rad_emj=["<:grey:1525893303898214400>", "<:gren:1497928981188575232>"]
+obj_emj=["<:grey:1525893303898214400>", "<:gfac:1525896582036324372>", "<:ghom:1525985697612304537>"]
+num_emj=["<:zero:1527297606986764360>","<:one:1527003069726855270>", "<:two:1527001046713499840>",
          "<:thre:1527003085443043418>", "<:four:1527003120905883648>", "<:five:1527003139335651469>",
          "<:six:1527003153260876039>", "<:sevn:1527003167030509669>", "<:eigt:1527003185309552760>"]
+sym_emj=["<:job:1529150229193035917>","<:cog:1529150214764499084>"]
 blac = "<:blac:1527003711849631855>"
 
 class MyGame:
@@ -185,14 +186,16 @@ class MyView(DesignerView):
         ground = self.game.grounds[num]
         res = self.game.reses[num]
         self.screen.content=f""+blac
-        for i in range(1,9): self.screen.content += n_emoji[i]
+        for i in range(1,9): self.screen.content += num_emj[i]
         for i in range(2):
-            self.screen.content+="\n"+n_emoji[i+1]
-            for j in range(8):self.screen.content+=b_emoji[ground[i][j]]
-            self.screen.content+=" "+b_emoji[i+1]+str(res[i])
+            self.screen.content+="\n"+num_emj[i+1]
+            for j in range(8):self.screen.content+=obj_emj[ground[i][j]]
+            self.screen.content+=sym_emj[i]
+            for i in str(res[i]):
+                self.screen.content+=num_emj[int(i)]
         for i in range(2,8):
-            self.screen.content+="\n"+n_emoji[i+1]
-            for j in range(8):self.screen.content+=b_emoji[ground[i][j]]
+            self.screen.content+="\n"+num_emj[i+1]
+            for j in range(8):self.screen.content+=obj_emj[ground[i][j]]
         self.screen.content+="\n"
         self.screen.content+="\n"
 
