@@ -54,7 +54,7 @@ class MyGame:
         
     async def user_lost(self, user):
         loser_v = user
-        winner_v = views[(views.index(user)+1)%2]
+        winner_v = self.views[(loser_v.user.number+1)%2]
         await winner_v.victory()
         await loser_v.defeat()
         self.views[0].game = None
@@ -99,7 +99,7 @@ class MyView(DesignerView):
                 opponent = next(iter(fusers.values()))
                 game = MyGame()
                 await interaction.response.defer()
-                await game.create(opponent, self.user)
+                await game.create(self.user, opponent)
         delete_button = Button(label="Delete Thread", style=ButtonStyle.red)
         delete_button.callback = delete_callback
         play_button = Button(label="Start the game", style=ButtonStyle.green)
@@ -123,7 +123,7 @@ class MyView(DesignerView):
         self.screen = TextDisplay(f"Wait a bit...")
         self.table.add_item(self.screen)
 
-        b_input = Select(placeholder = "Building", min_values = 1, max_values = 1,
+        b_input = Select(placeholder = "Object", min_values = 1, max_values = 1,
             options = [
                 discord.SelectOption(
                     label="Overground factory",
@@ -150,7 +150,8 @@ class MyView(DesignerView):
             await interaction.response.defer()
             self.b_set[2]=int(x_input.values[0])
         async def build_ask(interaction: Interaction):
-            if 0 not in self.b_set:
+            if 0 in self.b_set: await interaction.response.send_message("You did not chosed the object or the coordinates",ephemeral=True)
+            elif self.game.grounds[self.user.number][self.b_set[1]-1][self.b_set[2]-1]==0:
                 await self.game.build(self)
                 await self.ground()
                 b_input.value=[]
@@ -159,7 +160,7 @@ class MyView(DesignerView):
                 self.b_set=[0, 0, 0]
                 await interaction.response.edit_message(view=self)
             else:
-                await interaction.response.send_message("You did not chosed the building or the coordinates",ephemeral=True)
+                await interaction.response.send_message("It is already object in this spot",ephemeral=True)
         async def surrender(interaction: Interaction):
             await interaction.response.defer()
             await self.game.user_lost(self)
@@ -182,18 +183,19 @@ class MyView(DesignerView):
     async def ground(self):
         num = self.user.number
         ground = self.game.grounds[num]
+        res = self.game.reses[num]
         self.screen.content=f""+blac
         for i in range(1,9): self.screen.content += n_emoji[i]
-        for i in range(8):
+        for i in range(2):
+            self.screen.content+="\n"+n_emoji[i+1]
+            for j in range(8):self.screen.content+=b_emoji[ground[i][j]]
+            self.screen.content+=" "+b_emoji[i+1]+str(res[i])
+        for i in range(2,8):
             self.screen.content+="\n"+n_emoji[i+1]
             for j in range(8):self.screen.content+=b_emoji[ground[i][j]]
         self.screen.content+="\n"
         self.screen.content+="\n"
-        
-        res = self.game.reses[num]
-        for i in range(len(b_emoji)-1):self.screen.content+=str(res[i])+" "
-        self.screen.content+="\n"
-        for i in range(len(b_emoji)-1):self.screen.content+=b_emoji[i+1]
+
         print(len(self.screen.content))
     async def show_game(self):
         self.clear_items()
