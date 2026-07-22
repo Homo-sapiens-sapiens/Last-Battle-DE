@@ -11,11 +11,11 @@ from discord.ui import (ActionRow, Button, Container, DesignerView,
 
 fusers = {}
 rad_emj=["<:grey:1525893303898214400>", "<:gren:1497928981188575232>"]
-obj_emj=["<:grey:1525893303898214400>", "<:gfac:1525896582036324372>", "<:ghom:1525985697612304537>"]
+obj_emj=["<:grey:1525893303898214400>", "<:gfac:1525896582036324372>", "<:ghom:1525985697612304537>", "<:glan:1529613092257005744>"]
 num_emj=["<:zero:1527297606986764360>","<:one:1527003069726855270>", "<:two:1527001046713499840>",
          "<:thre:1527003085443043418>", "<:four:1527003120905883648>", "<:five:1527003139335651469>",
          "<:six:1527003153260876039>", "<:sevn:1527003167030509669>", "<:eigt:1527003185309552760>"]
-sym_emj=["<:job:1529150229193035917>","<:cog:1529150214764499084>"]
+sym_emj=["<:job:1529150229193035917>","<:cog:1529150214764499084>", "<:shot:1529610411278733402>"]
 blac = "<:blac:1527003711849631855>"
 
 class MyGame:
@@ -24,8 +24,8 @@ class MyGame:
         self.views = [None, None]
         self.grounds = [[[0] * 8 for i in range(8)], [[0] * 8 for i in range(8)]]
         self.rads = [[[0] * 8 for i in range(8)], [[0] * 8 for i in range(8)]]
-        self.counts = [[2, 2], [2, 2]]
-        self.reses = [[20, 20], [20, 20]]
+        self.counts = [[2, 3, 1], [2, 3, 1]]
+        self.reses = [[20, 20, 1], [20, 20, 1]]
     def __del__(self):
         print("MyGame deleted")
 
@@ -42,9 +42,9 @@ class MyGame:
         self.users[0].number = 0
         self.users[1].number = 1
         for i in range(2):
-            for j in range(len(self.counts[0])):
+            for j in range(len(self.counts[i])):
                 k=0
-                while k != self.counts[0][0]:
+                while k != self.counts[i][j]:
                     r1 = random.randint(0, 7)
                     r2 = random.randint(0, 7)
                     if not self.grounds[i][r1][r2]:
@@ -187,13 +187,13 @@ class MyView(DesignerView):
         res = self.game.reses[num]
         self.screen.content=f""+blac
         for i in range(1,9): self.screen.content += num_emj[i]
-        for i in range(2):
+        for i in range(3):
             self.screen.content+="\n"+num_emj[i+1]
             for j in range(8):self.screen.content+=obj_emj[ground[i][j]]
             self.screen.content+=sym_emj[i]
-            for i in str(res[i]):
-                self.screen.content+=num_emj[int(i)]
-        for i in range(2,8):
+            for j in str(res[i]):
+                self.screen.content+=num_emj[int(j)]
+        for i in range(3,8):
             self.screen.content+="\n"+num_emj[i+1]
             for j in range(8):self.screen.content+=obj_emj[ground[i][j]]
         self.screen.content+="\n"
