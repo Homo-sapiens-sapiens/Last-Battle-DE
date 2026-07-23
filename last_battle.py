@@ -90,17 +90,14 @@ class MyView(DesignerView):
         async def play_callback(interaction: Interaction):
             if self.user.id in fusers:
                 await interaction.response.send_message("You already are waiting for opponent",ephemeral=True)
-                return
             elif len(fusers) == 0:
                 fusers[self.user.id] = self.user
-                self.menu.add_item(TextDisplay("Waiting for the opponent"))
-                await interaction.response.edit_message(view=self)
-                return
+                await interaction.response.send_message("Waiting for the opponent",ephemeral=True)
             else:
                 opponent = next(iter(fusers.values()))
                 game = MyGame()
-                await interaction.response.defer()
                 await game.create(self.user, opponent)
+                await interaction.response.send_message("The game started! Good luck!",ephemeral=True)
         delete_button = Button(label="Delete Thread", style=ButtonStyle.red)
         delete_button.callback = delete_callback
         play_button = Button(label="Start the game", style=ButtonStyle.green)
@@ -127,13 +124,17 @@ class MyView(DesignerView):
         b_input = Select(placeholder = "Object", min_values = 1, max_values = 1,
             options = [
                 discord.SelectOption(
-                    label="Overground factory",
+                    label="Overground factory, 20 prod, 10 work",
                     value="1",
-                    emoji=discord.PartialEmoji(name="up_fac",id=1525896582036324372)),
+                    emoji=discord.PartialEmoji(name="gfac",id=1525896582036324372)),
                 discord.SelectOption(
-                    label="Overground city",
+                    label="Overground city, 10 prod, 20 work",
                     value="2",
-                    emoji=discord.PartialEmoji(name="up_hom",id=1525985697612304537))])
+                    emoji=discord.PartialEmoji(name="ghom",id=1525985697612304537)),
+                discord.SelectOption(
+                    label="Launching_platform, 10 prod, 10 work",
+                    value="3",
+                    emoji=discord.PartialEmoji(name="glan",id=1529613092257005744))])
         y_input = Select(placeholder = "Vertical", min_values = 1, max_values = 1,
             options = [discord.SelectOption(label=str(i), value=str(i))for i in range(1, 9)])
         x_input = Select(placeholder = "Horizontal", min_values = 1, max_values = 1,
