@@ -482,6 +482,9 @@ class MyUser:
         
 bot = Bot()
 
+from invite_cog import InviteCog
+bot.add_cog(InviteCog(bot))
+
 @bot.event
 async def on_ready():
     global events
