@@ -5,6 +5,7 @@ import random
 from dotenv import load_dotenv
 load_dotenv()
 import discord
+import varis
 from discord.ext import commands
 from discord import (ApplicationContext, Bot, ButtonStyle,
     Color, File, Interaction, SeparatorSpacingSize, User)
@@ -49,10 +50,10 @@ prd_cst = (30, 20, 10,)
 obj_prd = (5, 10)
 rck_cst = (10, 20)
 rad_rck = (4, 8)
-rad_cst = 10
+rad_cst = (5, 10)
 rad_obj = (1, 2, 2,)
-rad_shw = (0,) * 8 + (1,) * 2 + (2,)
-rad_add = (1,)
+rad_shw = (0,)*8 + (1,)*2 + (2,)
+rad_add = (1, -1)
 fusers={}
 min_cost = 10
 
@@ -134,7 +135,7 @@ class MyGame:
                 await self.users[(num+1)%2].message.edit(view=self.views[(num+1)%2])
                 await self.views[num].sh_map(1)
             case 3:
-                self.reses[num][0]-=rad_cst
+                self.reses[num][0]-=rad_cst[ask[0]-1]
                 self.rads[num][ask[1]-1][ask[2]-1]+=rad_add[ask[0]-1]
                 if self.rads[num][ask[1]-1][ask[2]-1]>=8:
                     self.rads[num][ask[1]-1][ask[2]-1]=8
@@ -186,6 +187,24 @@ class MyView(DesignerView):
         self.message = None
         super().__init__(timeout=None)
     def __del__(self): print("game view deleted")
+    async def self_del(self):
+        fusers.pop(self.user.id, None)
+        varis.all_users.pop(self.user.id, None)
+        self.clear_items()
+        self.status = None
+        self.selects = None
+        self.rovv = None
+        self.g_set = None
+        self.cont=[]
+        self.menu = None
+        self.table = None
+        self.screen = None
+        await self.message.delete()
+        self.message = None
+        self.user = None
+        self.stop()
+        self.id = None
+        return
     async def create_menu(self):
         text1 = TextDisplay("# LAST BATTLE")
         thumbnail = Thumbnail(bot.user.display_avatar.url)
@@ -193,22 +212,7 @@ class MyView(DesignerView):
         self.menu = Container(section, color=Color.from_rgb(180, 180, 180))
         #KILL VIEW AND USER
         async def delete_callback(interaction: Interaction): 
-            fusers.pop(self.user.id, None)
-            self.clear_items()
-            self.status = None
-            self.selects = None
-            self.rovv = None
-            self.g_set = None
-            self.message = None
-            self.cont=[]
-            self.menu = None
-            self.table = None
-            self.screen = None
-            await interaction.message.delete()
-            self.user = None
-            self.stop()
-            self.id = None
-            return
+            await self.self_del()
         async def play_callback(interaction: Interaction):
             if self.user.id in fusers: await interaction.response.send_message("Пожалуйста, подождите",ephemeral=True)
             elif len(fusers) == 0:
@@ -337,7 +341,7 @@ class MyView(DesignerView):
                             self.g_set=[0, 0, 0, self.g_set[3]]
                             await interaction.message.edit(view=self)
                     case 3:
-                        if rad_cst > self.game.reses[self.user.number][0]: await interaction.followup.send("У вас недостаточно производственной мощи",ephemeral=True)
+                        if rad_cst[self.g_set[0]-1] > self.game.reses[self.user.number][0]: await interaction.followup.send("У вас недостаточно производственной мощи",ephemeral=True)
                         elif self.game.rads[self.user.number][self.g_set[1]-1][self.g_set[2]-1] >=8: await interaction.followup.send("Нельзя повышать радиацию больше 8",ephemeral=True)
                         else:
                             await self.game.proceed()
@@ -463,6 +467,7 @@ class MyUser:
         self = cls()
         self.name = ctx.author.name
         self.id = ctx.author.id
+        varis.all_users[self.id] = self
         self.dm = await ctx.author.create_dm()
         async for message in self.dm.history(limit=None):
             if message.author == bot.user:
@@ -491,15 +496,20 @@ async def on_ready():
     print(f"{bot.user} is ready and online!")
     return
 
-@bot.slash_command(name="start", description="Начать игру в личном чате")
+@bot.slash_command(name="start", description="Закончить прошлую игру, если есть и открыть новое меню")
 async def new_game(ctx: discord.ApplicationContext):
     if ctx.guild is None:
         await ctx.respond("Эта команда доступна только на сервере.",ephemeral=True)
         return
     try:
+        if ctx.user.id in varis.all_users:
+            usr = varis.all_users[ctx.user.id]
+            if usr.game:
+                await usr.game.users[not usr.number].temp_msg("# ПОБЕДА", "Противник покинул игру")
+                await usr.game.user_lost(usr.view)
+            await usr.view.self_del()
         await ctx.respond("Создаем меню",ephemeral=True)
         user=await MyUser.create(ctx)
-        global fusers
         await ctx.followup.send("Меню для вас создано в личном чате",ephemeral=True)
         return
     except discord.Forbidden as e: await ctx.followup.send(f"Не удалось отправить сообщение. Попробуйте открыть личные сообщения и использовать команду снова. В случае успеха вы можете снова закрыть личные сообщения",ephemeral=True)
