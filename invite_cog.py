@@ -1,10 +1,10 @@
 import sys
 from types import SimpleNamespace
-
+import varis
 import discord
 from discord.ext import commands
 import invite_db
-
+last_battle = sys.modules["__main__"]
 
 class InviteView(discord.ui.View):
     def __init__(self, invite_id: int, inviter: discord.Member, target: discord.Member):
@@ -30,22 +30,21 @@ class InviteView(discord.ui.View):
         if interaction.user.id != self.target.id:
             await interaction.response.send_message("Вызов может принять исключительно приглашённый соперник.", ephemeral=True)
             return
+        if interaction.user.id in varis.all_users:
+            usr = varis.all_users[interaction.user.id]
+            if usr.game:
+                await usr.game.users[not usr.number].temp_msg("# ПОБЕДА", "Противник покинул игру")
+                await usr.game.user_lost(usr.view)
+            await usr.view.self_del()
         await invite_db.set_invite_status(self.invite_id, "accepted")
         self.disable_all_items()
         self.stop()
-        await interaction.response.edit_message(
-            content=f"Начинаю игру...",
-            view=self,
-        )
-        last_battle = sys.modules["__main__"]
+        await interaction.response.edit_message(content=f"Начинаю игру...",view=self,)
         try:
             player1 = await last_battle.MyUser.create(SimpleNamespace(author=self.inviter))
             player2 = await last_battle.MyUser.create(SimpleNamespace(author=self.target))
         except discord.Forbidden:
-            await self.message.edit(
-                content="Мне не удалось создать игру! Походу у одного из игроков закрыты личные сообщения.",
-                view=None,
-            )
+            await self.message.edit(content="Не удалось создать игру. Возможно у одного из игроков закрыты личные сообщения", view=None,)
             return
         game = last_battle.MyGame()
         await game.create(player1, player2)
@@ -56,19 +55,13 @@ class InviteView(discord.ui.View):
         await invite_db.set_invite_status(self.invite_id, status)
         self.stop()
         await interaction.response.defer()
-        try:
-            await interaction.message.delete()
-        except discord.HTTPException:
-            pass
-
+        try: await interaction.message.delete()
+        except discord.HTTPException: pass
     async def on_timeout(self):
         await invite_db.set_invite_status(self.invite_id, "expired")
         if self.message:
-            try:
-                await self.message.delete()
-            except discord.HTTPException:
-                pass
-
+            try: await self.message.delete()
+            except discord.HTTPException: pass
 
 class InviteCog(commands.Cog):
     def __init__(self, bot):
@@ -82,30 +75,30 @@ class InviteCog(commands.Cog):
             await invite_db.expire_all_pending()
             self.db_ready = True
 
-    @commands.slash_command(name="battle_invite", description="Пригласить соперника в игру")
-    async def battle_invite(
-        self,
-        ctx: discord.ApplicationContext,
-        opponent: discord.Option(discord.Member, "Кого ты хочешь пригласить?"),
-    ):
+    @commands.slash_command(name="battle_invite", description="Пригласить соперника в игру (Если вы уже играете - вы проиграете при вызове этой команды)")
+    async def battle_invite(self, ctx: discord.ApplicationContext, opponent: discord.Option(discord.Member, "Выберите, кого пригласить"),):
         if ctx.guild is None:
-            await ctx.respond("Эта команда не доступна в личке.", ephemeral=True)
+            await ctx.respond("Эта команда не доступна в личном чате", ephemeral=True)
             return
         if opponent.id == ctx.author.id:
-            await ctx.respond("Нельзя пригласить самого себя...", ephemeral=True)
+            await ctx.respond("Нельзя пригласить самого себя", ephemeral=True)
             return
         if opponent.bot:
-            await ctx.respond("Нельзя пригласить бота...", ephemeral=True)
+            await ctx.respond("Нельзя пригласить бота", ephemeral=True)
             return
         if await invite_db.get_pending_by_inviter(ctx.author.id):
-            await ctx.respond("У тебя уже есть активное приглашение. Дождись ответа или же отмени его.", ephemeral=True)
+            await ctx.respond("У вас уже есть активное приглашение. Дождитесь ответа или же отмените его.", ephemeral=True)
             return
+        if ctx.user.id in varis.all_users:
+            usr = varis.all_users[ctx.user.id]
+            if usr.game:
+                await usr.game.users[not usr.number].temp_msg("# ПОБЕДА", "Противник покинул игру")
+                await usr.game.user_lost(usr.view)
+            await usr.view.self_del()
         invite = await invite_db.create_invite(ctx.author.id, opponent.id)
         view = InviteView(invite.id, ctx.author, opponent)
         response = await ctx.respond(
-            f"{opponent.mention}, тебя {ctx.author.mention} вызывает на дуэль!", view=view
+            f"{opponent.mention}, {ctx.author.mention} вызывает вас на дуэль \n (Если вы уже играете - вы проиграете при принятии этого приглашения)", view=view
         )
-        if isinstance(response, discord.Interaction):
-            view.message = await response.original_response()
-        else:
-            view.message = response
+        if isinstance(response, discord.Interaction): view.message = await response.original_response()
+        else: view.message = response
