@@ -48,7 +48,7 @@ helps=(f"Это режим строительства. Тут вы можете 
 blac = "<:black:1527003711849631855>"
 prd_cst = (30, 20, 10,)
 obj_prd = (5, 10)
-rck_cst = (10, 20)
+rck_cst = (10, 15)
 rad_rck = (4, 8)
 rad_cst = (5, 10)
 rad_obj = (1, 2, 2,)
@@ -271,16 +271,22 @@ class MyView(DesignerView):
                     discord.SelectOption(
                         label="Обычная ядерная бомба. 10 п.м.",
                         value="1",
-                        emoji=discord.PartialEmoji(name="nuke",id=1530907025855483994)),
+                        emoji=discord.PartialEmoji(name="nuke",id=1544666666531684422)),
                     discord.SelectOption(
                         label="Кобальтовая ядерная бомба. 20 п.м, навсегда делает клетку недоступной",
-                        value="2")]))
+                        value="2",
+                        emoji=discord.PartialEmoji(name="rad",id=1544676662434734100))]))
         self.selects.append(
             Select(placeholder = "Действие", min_values = 1, max_values = 1, id = 104,
                    options = [
                        discord.SelectOption(
                         label="Выпустить радиацию. 10 п.м, +1 еденица радиации",
-                        value="1",)]))
+                        value="1",
+                        emoji=discord.PartialEmoji(name="rad",id=1544676662434734100)),
+                       discord.SelectOption(
+                        label="Собрать радиацию. 15 п.м, -1 еденица радиации",
+                        value="2",
+                        emoji=discord.PartialEmoji(name="def",id=1550459015312445450))]))
         y_input = Select(placeholder = "Координата по вертикали", min_values = 1, max_values = 1, id = 105,
             options = [discord.SelectOption(label=str(i), value=str(i))for i in range(1, 9)])
         x_input = Select(placeholder = "Координата по горизонтали", min_values = 1, max_values = 1, id = 106,
@@ -290,14 +296,18 @@ class MyView(DesignerView):
         hel_but = Button(label="Помощь", style=ButtonStyle.grey)
         sur_but = Button(label="Сдаться", style=ButtonStyle.red)
         async def m_set(interaction: Interaction):
+            await interaction.response.defer()
             mod = int(m_input.values[0])
             m_input.placeholder = modes[mod]
             await self.sh_map(mod)
-            self.rovv.remove_item(self.selects[self.g_set[3]-1])
-            self.rovv.add_item(self.selects[mod])
+            try:
+                self.rovv.remove_item(self.selects[self.g_set[3]-1])
+                self.rovv.add_item(self.selects[mod])
+            except:
+                pass
             self.g_set[0] = 0
             self.g_set[3]=mod+1
-            await interaction.response.edit_message(view=self)
+            await self.user.message.edit(view=self)
         async def b_set(interaction: Interaction):
             await interaction.response.defer()
             self.g_set[0]=int(self.selects[0].values[0])
@@ -342,14 +352,16 @@ class MyView(DesignerView):
                             await interaction.message.edit(view=self)
                     case 3:
                         if rad_cst[self.g_set[0]-1] > self.game.reses[self.user.number][0]: await interaction.followup.send("У вас недостаточно производственной мощи",ephemeral=True)
-                        elif self.game.rads[self.user.number][self.g_set[1]-1][self.g_set[2]-1] >=8: await interaction.followup.send("Нельзя повышать радиацию больше 8",ephemeral=True)
                         else:
-                            await self.game.proceed()
-                            await self.sh_map(int(self.g_set[3]-1))
-                            x_input.value=[]
-                            y_input.value=[]
-                            self.g_set=[0, 0, 0, self.g_set[3]]
-                            await interaction.message.edit(view=self)
+                            forec = self.game.rads[self.user.number][self.g_set[1]-1][self.g_set[2]-1]+rad_add[self.g_set[0]-1]
+                            if forec>8 or forec<0: await interaction.followup.send("Радиация не может быть ниже 0 или выше 8",ephemeral=True)
+                            else:
+                                await self.game.proceed()
+                                await self.sh_map(int(self.g_set[3]-1))
+                                x_input.value=[]
+                                y_input.value=[]
+                                self.g_set=[0, 0, 0, self.g_set[3]]
+                                await interaction.message.edit(view=self)
         async def pass_move(interaction: Interaction):
             if self.game.moveof != self.user.number: await interaction.followup.send("Сейчас не ваш ход",ephemeral=True)
             else:
